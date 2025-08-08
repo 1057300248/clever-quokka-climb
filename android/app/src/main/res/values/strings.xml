@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">clever-quokka-climb</string>
+    <string name="title_activity_main">clever-quokka-climb</string>
+    <string name="package_name">com.example.cleverquokkaclimb</string>
+    <string name="custom_url_scheme">com.example.cleverquokkaclimb</string>
+</resources>
