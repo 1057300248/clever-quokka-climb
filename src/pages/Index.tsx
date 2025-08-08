@@ -12,9 +12,12 @@ const Index = () => {
         <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8">
           我们已经为您准备好了基础功能，让我们开始构建您的项目吧！
         </p>
-        <div className="flex justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           <Button asChild size="lg">
             <Link to="/price-comparator">前往1688比价工具</Link>
+          </Button>
+          <Button asChild size="lg" variant="secondary">
+            <Link to="/noon-scraper">前往Noon数据抓取工具</Link>
           </Button>
         </div>
       </div>
