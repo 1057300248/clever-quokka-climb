@@ -50,9 +50,11 @@ const NoonScraper = () => {
       });
 
       if (error) {
-        throw new Error(error.message);
+        const typedError = error as { context?: { error?: string }; message: string };
+        const detailedMessage = typedError.context?.error || typedError.message;
+        throw new Error(detailedMessage);
       }
-      
+
       if (data.error) {
         throw new Error(data.error);
       }
@@ -60,10 +62,11 @@ const NoonScraper = () => {
       setProductData(data);
       dismissToast(toastId);
       showSuccess("商品数据抓取成功！");
-    } catch (err: any) {
-      dismissToast(toastId);
-      showError(`抓取失败: ${err.message}`);
-    } finally {
+      } catch (err) {
+        dismissToast(toastId);
+        const message = err instanceof Error ? err.message : String(err);
+        showError(`抓取失败: ${message}`);
+      } finally {
       setIsLoading(false);
     }
   };
