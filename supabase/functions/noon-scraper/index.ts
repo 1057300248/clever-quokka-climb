@@ -51,19 +51,27 @@ serve(async (req) => {
     const specifications: Record<string, string> = {};
 
     try {
-      const salesVolumeElement = Array.from(doc.querySelectorAll('span, div')).find(el => (el as Element).textContent.includes('sold in the last month'));
-      monthlySalesVolume = salesVolumeElement ? (salesVolumeElement as Element).textContent.trim() : "未找到";
+      const salesVolumeElement = Array.from(doc.querySelectorAll('span, div')).find(
+        (el) => (el as Element).textContent.includes('sold in the last month'),
+      );
+      monthlySalesVolume = salesVolumeElement
+        ? (salesVolumeElement as Element).textContent.trim()
+        : "未找到";
 
       const brandLinkElement = doc.querySelector('a[data-qa-id="brand-name-pdp"]');
-      brandLink = brandLinkElement ? `https://www.noon.com${brandLinkElement.getAttribute('href')}` : "未找到";
+      brandLink = brandLinkElement
+        ? `https://www.noon.com${brandLinkElement.getAttribute('href')}`
+        : "未找到";
 
       const sellerLinkElement = doc.querySelector('a[data-qa-id="seller-name-pdp"]');
-      sellerLink = sellerLinkElement ? `https://www.noon.com${sellerLinkElement.getAttribute('href')}` : "未找到";
+      sellerLink = sellerLinkElement
+        ? `https://www.noon.com${sellerLinkElement.getAttribute('href')}`
+        : "未找到";
 
       const specContainer = doc.querySelector('div[data-qa-id="specifications-pdp"]');
       if (specContainer) {
         const specRows = specContainer.querySelectorAll('div');
-         for (let i = 0; i < specRows.length; i += 2) {
+        for (let i = 0; i < specRows.length; i += 2) {
           const keyElement = specRows[i];
           const valueElement = specRows[i + 1];
           if (keyElement && valueElement) {
@@ -75,8 +83,9 @@ serve(async (req) => {
           }
         }
       }
-    } catch (e: any) {
-      throw new Error(`提取数据时出错: ${e.message}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      throw new Error(`提取数据时出错: ${message}`);
     }
 
     const data = {
@@ -92,9 +101,13 @@ serve(async (req) => {
       status: 200,
     });
 
-  } catch (error: any) {
-    console.error("Scraping error:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Scraping error:", message);
+    const errorMessage = message.includes("error sending request")
+      ? "无法连接到 Noon 网站，请稍后再试。"
+      : message;
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
