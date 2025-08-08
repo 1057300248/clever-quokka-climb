@@ -17,8 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { showError, showSuccess } from "@/utils/toast";
+import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import * as XLSX from "xlsx";
+import { supabase } from "@/integrations/supabase/client";
 
 // 为抓取的商品定义数据结构
 type NoonProduct = {
@@ -34,34 +35,37 @@ const NoonScraper = () => {
   const [productData, setProductData] = useState<NoonProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleScrape = () => {
+  const handleScrape = async () => {
     if (!productUrl.includes("noon.com")) {
       showError("请输入一个有效的 Noon 商品链接");
       return;
     }
     setIsLoading(true);
-    console.log("开始抓取: ", productUrl);
+    setProductData(null);
+    const toastId = showLoading("正在抓取商品数据...");
 
-    // 模拟一个到后端抓取服务的网络请求
-    setTimeout(() => {
-      // 这里通常会从您的后端接收数据
-      // 现在，我们使用模拟数据
-      const mockData: NoonProduct = {
-        monthlySalesVolume: "500+",
-        monthlySalesValue: "150,000 AED",
-        brandLink: "https://www.noon.com/uae-en/s/apple",
-        sellerLink: "https://www.noon.com/uae-en/s/noon",
-        specifications: {
-          "Model Name": "iPhone 15 Pro Max",
-          "Storage Capacity": "256 GB",
-          "Colour": "Natural Titanium",
-          "Cellular Network": "5G",
-        },
-      };
-      setProductData(mockData);
-      setIsLoading(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('noon-scraper', {
+        body: { productUrl },
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setProductData(data);
+      dismissToast(toastId);
       showSuccess("商品数据抓取成功！");
-    }, 2000);
+    } catch (err: any) {
+      dismissToast(toastId);
+      showError(`抓取失败: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleExport = () => {
@@ -70,7 +74,6 @@ const NoonScraper = () => {
       return;
     }
 
-    // 准备要导出为 Excel 的数据
     const specs = Object.entries(productData.specifications)
       .map(([key, value]) => `${key}: ${value}`)
       .join("\n");
@@ -89,13 +92,12 @@ const NoonScraper = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Noon Product Data");
 
-    // 设置列宽
     worksheet["!cols"] = [
-      { wch: 15 }, // 月销售量
-      { wch: 20 }, // 月销售额
-      { wch: 40 }, // 品牌链接
-      { wch: 40 }, // 商家链接
-      { wch: 50 }, // 参数规格
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 40 },
+      { wch: 40 },
+      { wch: 50 },
     ];
 
     XLSX.writeFile(workbook, "noon_product_data.xlsx");
@@ -176,7 +178,7 @@ const NoonScraper = () => {
         </CardContent>
         <CardFooter>
           <p className="text-xs text-muted-foreground">
-            数据抓取功能依赖于后端服务，当前为模拟数据展示。
+            数据抓取功能已连接后端服务。如果抓取失败，可能是 Noon 网站结构已更新。
           </p>
         </CardFooter>
       </Card>
